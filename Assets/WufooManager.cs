@@ -41,6 +41,15 @@ public class WufooManager : MonoBehaviour {
     // Use this for initialization
     void Start()
     {
+        // WUFOO: This appears to be an issue with Unity and not with our API - basically Unity has issues with SSL connections
+        // that use AES encryption.  The C# linker, in its haste to optimize everything, optimizes out the AES encryption provider
+        // which causes this error - basically, the libs required to decrypt the response aren't in the compiled app.  
+        // Since this is a bug in Unity, it's not something we can fix - but you should be able to add the following line 
+        // anywhere in your app to force the linker to include the AES provider - probably easiest at the entrypoint, like the 
+        // Start() method in your GitHub example.
+        // You don't actually need to use that provider anywhere, but this causes the linker to not optimize it out on compile.
+        System.Security.Cryptography.AesCryptoServiceProvider w = new System.Security.Cryptography.AesCryptoServiceProvider();
+
         Authenticate();
     }
 
@@ -52,7 +61,11 @@ public class WufooManager : MonoBehaviour {
 
     public void Authenticate()
     {
-        ServicePointManager.ServerCertificateValidationCallback = MyRemoteCertificateValidationCallback;
+        // ServicePointManager.ServerCertificateValidationCallback = MyRemoteCertificateValidationCallback;
+
+        // An alternative, albeit less secure, option would be to bypass certificate validation 
+        // (regardless of the encryption provider being used) by adding:
+        System.Net.ServicePointManager.ServerCertificateValidationCallback += (o, certificate, chain, errors) => true;
 
         try
         {
